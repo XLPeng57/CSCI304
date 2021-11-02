@@ -1,0 +1,216 @@
+.pos 0x0
+
+main: 
+   irmovl stack, %eax    # set stack ptr
+   irmovl stack, %esp    # set stack ptr
+   irmovl input, %esi    # input
+   irmovl output, %edi   # output
+
+mainloop:
+
+   mrmovl (%esi), %ecx   # %ecx holds values from input
+   
+   #store original value 
+   rmmovl %ecx, (%edi)   # store the original input
+   irmovl $4, %edx       # get ready to set next address in output
+   addl   %edx, %edi     # set new output address
+
+   #get absolute value 
+   call abs              
+
+   #store abs value
+   rmmovl %ecx, (%edi)   # store absolute value in output
+   irmovl $4, %edx       # get ready to set next address in output
+   addl   %edx, %edi     # set new output address
+
+   #call multipily to get square
+   rrmovl %ecx, %ebp     # copy parameter values
+   rrmovl %ecx, %edx
+   call mult         
+
+   #store square 
+   rmmovl %ebp, (%edi)   # store square in output 
+   irmovl $4, %edx       # get ready to set next address in output
+   addl   %edx, %edi     # set new output address
+
+   #call multipily again to get cube
+   mrmovl (%esi), %ecx   # get original value from input
+   call abs              # get abs value of num
+   rrmovl %ecx, %edx     # copy num into %edx
+   call mult             # get cube
+
+   #store cube
+   rmmovl %ebp, (%edi)   # store cube in output
+   irmovl $4, %edx       # get ready to set next address in output
+   addl   %edx, %edi     # set new output address
+
+   #get factorial 
+   mrmovl (%esi), %ecx   # get original value from input
+   call abs              # get abs value of num
+   rrmovl %ecx, %edx     # copy num into %edx
+   call rfact            # get factorial
+
+   #store factorial value 
+   rmmovl %ebp, (%edi)   # store factorial in output
+   irmovl $4, %edx       # get ready to set next address in output
+   addl   %edx, %edi     # set new output address
+
+   #if num is odd set lsb of status byte to 1
+   mrmovl (%esi), %ecx   # get original value from input
+   irmovl $15, %ebp      # initialize lsb value to 1111
+   call odd              # call odd to see if number is odd
+
+   #if num is negative, set next lsb of status byte to 1
+   call negative         # call negative to see if number is negative
+
+   #if factorial of num > square of num, set next lsb of status byte to 1
+   irmovl $4, %ebx       # get ready to set previous address in output
+   subl   %ebx, %edi     
+   mrmovl (%edi), %ecx   # get factorial from previous output
+   irmovl $8, %ebx       # get ready to set previous two address in output
+   subl   %ebx, %edi
+   mrmovl (%edi), %edx   # get square from output array
+   irmovl $12, %ebx      
+   addl %ebx, %edi       # back to orinial output address
+   call facsquare        # call facsquare to see if fac > square
+
+   #if factorial of num > cube of num, set next lsb of status byte to 1
+   irmovl $4, %ebx
+   subl   %ebx, %edi
+   mrmovl (%edi), %ecx   # get factorial from previous output
+   irmovl $4, %ebx
+   subl   %ebx, %edi
+   mrmovl (%edi), %edx   # get cube from output array
+   irmovl $8, %ebx 
+   addl %ebx, %edi       # back to orinial output address
+   call faccube          # call faccube to see if fac > square
+
+   #store lsb value 
+   rmmovl %ebp, (%edi)   # store value in output
+   irmovl $4, %edx
+   addl   %edx, %edi     # set new output address
+
+   #set new input 
+   addl   %edx, %esi     # set new input address
+   irmovl $0, %ecx       # get ready to test value for 0
+   addl   %edx, %ecx     # add just to set condition codes
+   je     end            # val == 0, so we're done
+
+   jmp mainloop 
+   
+
+abs: #store absolute value in %ecx
+   irmovl $0, %edx       # edx = 0
+   subl %ecx, %edx       # edx = 0 - input
+   jg absif              # if 0 - input > 0, input number if negative
+   ret
+
+absif: 
+   rrmovl %ecx, %edx     # ecx = edx
+   addl %ecx, %edx       # edx = 2 * ecx
+   subl %edx, %ecx       # ecx = ecx - edx 
+   ret
+
+
+mult: # param: x = ebp, y = edx, return: ebp
+   pushl %eax
+   rrmovl %esp, %eax
+   pushl %edx
+   rrmovl %edx, %ebx    # copy edx into ebx
+   rrmovl %ebp, %edx    # copy ebp into edx
+   
+   irmovl $1, %ecx      # ecx = 1
+   subl %ecx, %ebx      # ebx = ebx - 1 
+   jle end_mult         # if ebx <= 0, end mulitply
+
+loop_mult:
+   addl %edx, %ebp      # ebp = ebp + edx
+   subl %ecx, %ebx      # ebx = ebx - 1
+   jne loop_mult        # if ebs != 0, continue the loop
+
+end_mult:
+   popl %edx
+   rrmovl %eax, %esp
+   popl %eax
+   ret
+
+
+rfact: # param: edx, return: ebp
+   
+   pushl %eax
+   rrmovl %esp, %eax
+   irmovl $1, %ecx      # ecx = 1
+   rrmovl %edx, %ebp    # copy edx into ebp
+   subl %ecx, %edx      # edx = edx - 1
+
+loop_rfact:
+   pushl %edx
+   call mult            # get value of ebp * edx
+   popl %edx
+   subl %ecx, %edx      # edx = edx - 1
+   jne loop_rfact       # if dex != 0, continue the loop
+   rrmovl %eax, %esp
+   popl %eax
+   ret
+
+
+odd: # check if input value is odd
+   irmovl $0x1, %edx     # get ready to test value for odd
+   andl   %ecx, %edx     
+   je    ifodd           # otherwise odd
+   ret 
+ifodd:
+   irmovl $14, %edx      # if even, set lsb of status type to 0
+   andl   %edx, %ebp
+   ret
+
+
+negative: # check if input value is negative
+   irmovl $0, %edx  
+   subl %ecx, %edx       # if 0 - input < 0
+   jl ifnegative
+   ret
+ifnegative:
+   irmovl $13, %edx      # set lsb of status type to 0
+   andl   %edx, %ebp
+   ret
+
+
+facsquare: # check if fatorial > square, ecx = fac, edx = square
+   subl %edx, %ecx        
+   jl iffacsquare        # if fac < square
+   ret 
+iffacsquare:
+   irmovl $11, %edx      # set lsb of status type to 0
+   andl   %edx, %ebp
+   ret
+
+
+faccube: # check if fatorial > cube, ecx = fac, edx = cube
+   subl %edx, %ecx       
+   jl if_facube          # if fac < cube
+   ret 
+if_facube:
+   irmovl $7, %edx       # set lsb of status type to 0
+   andl   %edx, %ebp
+   ret
+
+
+end:
+   halt
+
+
+.align 4
+
+input:
+.long -3
+.long -10
+.long 7
+.long 0
+
+output:
+
+.pos 0x400
+stack:
+
+

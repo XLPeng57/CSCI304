@@ -1,0 +1,48 @@
+.pos 0x0
+        
+            irmovl $1, %esp     # n = 1
+            irmovl arr, %eax    # initialize an array 
+
+nloop:                          # loop through 1 to n
+
+            
+            irmovl $0, %edx     # sum = 0
+            irmovl $1, %ebp     # j = 1
+
+sumloop:                        # loop through 1 to j to calculate the sum
+            
+            irmovl $1, %ecx     # i = 1
+            irmovl $0, %esi     # num = 0  
+            
+squareloop:                     # loop through 1 to i to calculate the square 
+
+            addl %ebp, %esi     # num = num + n (get n from nloop)          
+            irmovl $1, %edi     # increment i
+            addl %edi, %ecx     # i++
+            rrmovl %ebp, %ebx   # copy j into %ebx
+            subl %ecx, %ebx     # j - i 
+            jge squareloop      # while j - i >= 0
+
+        
+            addl %esi, %edx     # sum = sum + num (get num from square loop          
+            irmovl $1, %edi     # increment j
+            addl %edi, %ebp     # j++
+            rrmovl %esp, %ebx   # copy n into %ebx
+            subl %ebp, %ebx     # n - j
+            jge sumloop         # while j - j >= 0
+
+            rmmovl %edx, (%eax) # arr[i] = sum
+            irmovl $4, %edx     # compute next addr in arr
+            addl   %edx, %eax   # offset increased by 4 bytes
+            irmovl $1, %edi     # increment n
+            addl %edi, %esp     # n++
+            irmovl $10, %ebp    # let ebp = 10 
+            subl %esp, %ebp     # 10 - n 
+            jge nloop           # 10 - n >= 0
+         
+            halt
+
+.align 4
+arr:
+
+

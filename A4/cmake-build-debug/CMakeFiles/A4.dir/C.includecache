@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/pxl/CLionProjects/A4/calc.c
+stdio.h
+-
+string.h
+-
+ctype.h
+-
+calc.h
+/Users/pxl/CLionProjects/A4/calc.h
+
+/Users/pxl/CLionProjects/A4/calc.h
+

@@ -1,0 +1,52 @@
+.pos 0x0
+
+
+main: 
+   irmovl Stack, %esp    # set stack ptr
+   irmovl input, %esi    # input
+   irmovl output, %edi   # output
+
+mainloop:
+
+
+   irmovl $0, %edx       # get ready to test value for 0
+   addl   %ecx, %edx     # add just to set condition codes
+   je     end            # val == 0, so we're done
+
+   jmp endloop 
+
+
+
+   
+endloop:
+   rmmovl %ecx, (%edi)   # store value in output
+
+   irmovl $4, %edx       # get ready to set next address in output
+   addl   %edx, %edi     # set new output address
+
+   rmmovl %eax, (%edi)   # store return value from mult2/mult3 in output
+
+   addl   %edx, %esi     # set new input address
+   addl   %edx, %edi     # set new output address
+
+   jmp    mainloop
+   
+end:
+   halt
+
+
+
+
+
+
+.align 4
+
+input:
+.long -3
+.long -10
+.long 7
+
+output:
+
+.pos 0x400
+stack:
